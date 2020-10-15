@@ -124,34 +124,92 @@ void QRanker :: write_results()
   d.clear_data_psm_training();
   
   d.load_data_psm_results();
-  computePEP();
+
 
   ostringstream fname;
-  if (Params::GetBool("txt-output")) {
-    fname << out_dir << "/" << fileroot << "q-ranker.target.psms.txt";
-    ofstream f1(fname.str().c_str()); 
-    fname.str("");
-    fname << out_dir << "/" << fileroot << "q-ranker.decoy.psms.txt";
-    ofstream f2(fname.str().c_str());
-    write_results_psm_tab(f1, f2);
-    f1.close();
-    f2.close();
-    fname.str("");
-  }
+  fname << out_dir << "/" << fileroot << "q-ranker.psms.txt";
+  ofstream f1(fname.str().c_str()); 
+  write_simple_results(f1);
+  f1.close();
+  fname.str("");
+  /* computePEP(); */
+  /* ostringstream fname; */
+  /* if (Params::GetBool("txt-output")) { */
+  /*   fname << out_dir << "/" << fileroot << "q-ranker.target.psms.txt"; */
+  /*   ofstream f1(fname.str().c_str());  */
+  /*   fname.str(""); */
+  /*   fname << out_dir << "/" << fileroot << "q-ranker.decoy.psms.txt"; */
+  /*   ofstream f2(fname.str().c_str()); */
+  /*   write_results_psm_tab(f1, f2); */
+  /*   f1.close(); */
+  /*   f2.close(); */
+  /*   fname.str(""); */
+  /* } */
 
-  if (Params::GetBool("pepxml-output")) {
-    fname << out_dir << "/" << fileroot << "q-ranker.target.pep.xml";
-    PepXMLWriter xmlfile1;
-    xmlfile1.openFile(fname.str().c_str(), overwrite_flag);
-    fname.str("");
-    fname << out_dir << "/" << fileroot << "q-ranker.decoy.pep.xml";
-    PepXMLWriter xmlfile2;
-    xmlfile2.openFile(fname.str().c_str(), overwrite_flag);
-    write_results_psm_xml(xmlfile1, xmlfile2);
-    xmlfile1.closeFile();
-    xmlfile2.closeFile();
-  }
+  /* if (Params::GetBool("pepxml-output")) { */
+  /*   fname << out_dir << "/" << fileroot << "q-ranker.target.pep.xml"; */
+  /*   PepXMLWriter xmlfile1; */
+  /*   xmlfile1.openFile(fname.str().c_str(), overwrite_flag); */
+  /*   fname.str(""); */
+  /*   fname << out_dir << "/" << fileroot << "q-ranker.decoy.pep.xml"; */
+  /*   PepXMLWriter xmlfile2; */
+  /*   xmlfile2.openFile(fname.str().c_str(), overwrite_flag); */
+  /*   write_results_psm_xml(xmlfile1, xmlfile2); */
+  /*   xmlfile1.closeFile(); */
+  /*   xmlfile2.closeFile(); */
+  /* } */
   d.clear_data_psm_results();
+}
+
+void QRanker :: write_simple_results(ofstream &osTarget)
+{
+  int ps =fullset[0].psmind;
+  int label;
+  ofstream& os = osTarget;
+  os << "PSMId" << "\t" << "score" << "\t" << "q-value" << "\t" << "peptide" << "\t" << "Label" << "\t" << "ExpMass" << "\t" << "ScanNr" << "\t" << "proteinIds" << endl;
+  for(int i = 0; i < fullset.size(); i++){
+    if(fullset[i].label == 1){
+      label = 1;
+      os << "target" << "_";
+    } else {
+      label = -1;
+      os << "decoy" << "_";
+    }
+    int psmind = fullset[i].psmind;
+    int pepind = d.psmind2pepind(psmind);
+    string pep = d.ind2pep(pepind);
+    string seq, n,c;
+    // PSMId
+    os<< d.psmind2fname(psmind) << "_" << d.psmind2scan(psmind) << d.psmind2charge(psmind) << "\t";
+    // q-ranker score
+    os<< fullset[i].score << "\t"; 
+    // q-value
+    os<< fullset[i].q << "\t" ;
+    // peptide sequence
+    get_pep_seq(pep,seq,n,c);
+    os<<seq<<"\t";
+    // label
+    os<< label << "\t";
+    //Spectrum Neutral Mass 
+    os<<d.psmind2precursor_mass(psmind)<<"\t";
+    // Scan
+    os << d.psmind2scan(psmind) << "\t" ;
+    //protein id
+    vector<string> prots;  
+    get_protein_id(pepind,prots);
+    for (unsigned int j=0;j<prots.size();j++){
+      os << prots[j];
+      if (d.psmind2peptide_position(psmind) > -1) {
+	os << "("<<d.psmind2peptide_position(psmind)<<")";
+      }
+      if (j == prots.size() - 1) {
+	os << "\t";
+      } else {
+	os << ",";
+      }
+    }
+    os << endl;
+  }
 }
 
 void QRanker :: write_results_psm_tab(ofstream &osTarget, ofstream &osDecoy)

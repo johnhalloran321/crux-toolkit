@@ -56,6 +56,7 @@ public:
   void getMultiFDRXCorr(PSMScores &set, vector<double> &qval);
   void printNetResults(vector<int> &scores);
   void write_results();
+  void write_simple_results(ofstream &osTarget);
   void write_results_psm_tab(ofstream &osTarget, ofstream &osDecoy);
   void get_pep_seq(string &pep, string &seq, string &n, string &c);
   void write_results_psm_xml(PepXMLWriter& osTarget, PepXMLWriter& osDecoy);
